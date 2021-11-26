@@ -1,0 +1,192 @@
+import React from "react";
+import hotels from "./data";
+import Switch from "react-switch";
+
+import { withStyles } from "@material-ui/core/styles";
+import Card from "@material-ui/core/Card";
+import CardMedia from "@material-ui/core/CardMedia";
+import CardContent from "@material-ui/core/CardContent";
+import Divider from "@material-ui/core/Divider";
+import Typography from "@material-ui/core/Typography";
+import { IoArrowUpSharp, IoArrowDownSharp } from "react-icons/io5";
+
+import "./style.css";
+
+const styles = (muiBaseTheme) => ({
+  card: {
+    width: 300,
+    margin: 10,
+    transition: "0.3s",
+    boxShadow: "0 8px 40px -12px rgba(0,0,0,0.3)",
+    "&:hover": {
+      boxShadow: "0 16px 70px -12.125px rgba(0,0,0,0.3)",
+    },
+  },
+  content: {
+    textAlign: "left",
+    padding: muiBaseTheme.spacing.unit * 3,
+  },
+  divider: {
+    margin: `${muiBaseTheme.spacing.unit * 3}px 0`,
+  },
+  heading: {
+    fontWeight: "bold",
+  },
+  subheading: {
+    lineHeight: 1.8,
+  },
+  avatar: {
+    display: "inline-block",
+    border: "2px solid white",
+    "&:not(:first-of-type)": {
+      marginLeft: -muiBaseTheme.spacing.unit,
+    },
+  },
+});
+
+const sortTypes = {
+  up: {
+    class: "up",
+    fn: (a, b) => a.rating - b.rating,
+  },
+  down: {
+    class: "down",
+    fn: (a, b) => b.rating - a.rating,
+  },
+  default: {
+    class: "default",
+    fn: (a, b) => a,
+  },
+};
+
+class DisplayHotles extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      searchString: "",
+      checked: false,
+      displayDetails: [],
+      currentSort: "default",
+    };
+  }
+
+  handleChange = (checked) => {
+    this.setState({ checked });
+  };
+
+  handleSearch = (e) => {
+    this.setState({ searchString: e.target.value });
+  };
+
+  onSortChange = () => {
+    const { currentSort } = this.state;
+    let nextSort;
+
+    if (currentSort === "down") nextSort = "up";
+    else if (currentSort === "up") nextSort = "default";
+    else if (currentSort === "default") nextSort = "down";
+
+    this.setState({
+      currentSort: nextSort,
+    });
+  };
+
+  async componentDidMount() {
+    /** For now mockData is updated for the referecne */
+    // const result = await getHotels();
+    this.setState({
+      displayDetails: hotels.data,
+    });
+  }
+  render() {
+    let libraries = hotels.data,
+      searchString = this.state.searchString.trim().toLowerCase();
+    if (searchString.length > 0) {
+      libraries = libraries.filter(function (i) {
+        return i.name.toLowerCase().match(searchString);
+      });
+    }
+
+    if (this.state.checked) {
+      libraries = libraries.filter(function (i) {
+        return i.category.toLowerCase().match("non-veg");
+      });
+    } else {
+      libraries = libraries.filter(function (i) {
+        if (i.category === "veg") return i;
+      });
+    }
+
+    return (
+      <div>
+        <div>
+          <h1 className="heading-text">RESTAURANTS SEARCH</h1>
+        </div>
+        <div className="filterList">
+          <div className="serach-list">
+            <input
+              type="text"
+              placeholder="Search by Hotel "
+              onChange={this.handleSearch}
+            />
+          </div>
+
+          <br />
+          <br />
+          <div className="checkbox">
+            <span className="sub-head">
+              {this.state.checked ? "Non Veg" : "Veg"}
+            </span>
+            <Switch onChange={this.handleChange} checked={this.state.checked} />
+          </div>
+          <br />
+          <div className="checkbox">
+            <label className="sort sub-head" onClick={this.onSortChange}>
+              Sort By Rating
+            </label>
+            {this.state.currentSort === "down" && (
+              <IoArrowUpSharp className="sort-icon" />
+            )}
+            {this.state.currentSort === "up" && (
+              <IoArrowDownSharp className="sort-icon" />
+            )}
+          </div>
+        </div>
+
+        <div className="list">
+          {[...libraries]
+            .sort(sortTypes[this.state.currentSort].fn)
+            .map((d) => (
+              <Card className={this.props.classes.card}>
+                <div className="card-media">
+                  <CardMedia
+                    component="img"
+                    className={this.props.classes.media}
+                    image={d.imagePath}
+                    alt={"No Images Found"}
+                  />
+                </div>
+                <CardContent className={this.props.classes.content}>
+                  <Typography
+                    className={"MuiTypography--heading hotel-name"}
+                    variant={"h5"}
+                    gutterBottom
+                  >
+                    {`${d.name}`}
+                  </Typography>
+                  <p className={"subheading"}>{`${d.category}`}</p>
+                  <p className={"subheading"}>{`${d.city}`}</p>
+                  <Divider className={this.props.classes.divider} light />
+                  <p className={"rating"}>Rating : {d.rating} </p>
+                </CardContent>
+              </Card>
+            ))}
+        </div>
+      </div>
+    );
+  }
+}
+
+const WrappedApp = withStyles(styles)(DisplayHotles);
+
+export default WrappedApp;
